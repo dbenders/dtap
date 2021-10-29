@@ -19,6 +19,7 @@ package dtap
 import (
 	"context"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -42,7 +43,7 @@ type DnstapPrometheusOutputMetrics struct {
 	Name        string
 	Vec         *prometheus.CounterVec
 	LabelKeys   []string
-	LabelValues map[string]*DnstapPrometheusOutputMetricsValues
+	LabelValues sync.Map // map[string]*DnstapPrometheusOutputMetricsValues
 	Interval    int
 	Expire      int
 	CancelFunc  context.CancelFunc
@@ -75,7 +76,7 @@ func NewDnstapPrometheusOutputMetrics(counterConfig OutputPrometheusMetrics) *Dn
 			Help: counterConfig.GetHelp(),
 		}, counterConfig.GetLabels()),
 		LabelKeys:   counterConfig.GetLabels(),
-		LabelValues: map[string]*DnstapPrometheusOutputMetricsValues{},
+		LabelValues: sync.Map{},
 		Expire:      counterConfig.GetExpireSec(),
 		Interval:    counterConfig.GetExpireInterval(),
 	}
@@ -83,10 +84,10 @@ func NewDnstapPrometheusOutputMetrics(counterConfig OutputPrometheusMetrics) *Dn
 
 func (d *DnstapPrometheusOutputMetrics) Inc(values []string) {
 	d.Vec.WithLabelValues(values...).Inc()
-	d.LabelValues[strings.Join(values, ",")] = &DnstapPrometheusOutputMetricsValues{
+	d.LabelValues.Store(strings.Join(values, ","), &DnstapPrometheusOutputMetricsValues{
 		Values:     values,
 		LastUpdate: time.Now(),
-	}
+	})
 }
 
 func (d *DnstapPrometheusOutputMetrics) Flush(ctx context.Context) {
@@ -96,12 +97,14 @@ func (d *DnstapPrometheusOutputMetrics) Flush(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			for k, value := range d.LabelValues {
+			d.LabelValues.Range(func(k, val interface{}) bool {
+				value := val.(*DnstapPrometheusOutputMetricsValues)
 				if time.Now().Sub(value.LastUpdate) > time.Second*time.Duration(d.Expire) {
 					d.Vec.DeleteLabelValues(value.Values...)
-					delete(d.LabelValues, k)
+					d.LabelValues.Delete(k)
 				}
-			}
+				return true
+			})
 		}
 	}
 }
