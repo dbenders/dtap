@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	dnstap "github.com/dnstap/golang-dnstap"
@@ -34,6 +35,7 @@ type DnstapFstrmFileOutput struct {
 	enc             *framestream.Encoder
 	writer          io.WriteCloser
 	opened          chan bool
+	mux             sync.Mutex
 }
 
 func NewDnstapFstrmFileOutput(config *OutputFileConfig, params *DnstapOutputParams) *DnstapOutput {
@@ -61,28 +63,36 @@ func (o *DnstapFstrmFileOutput) open() error {
 	o.opened = make(chan bool)
 	go func() {
 		ticker := time.NewTicker(FlushTimeout)
+	L:
 		for {
 			select {
 			case <-o.opened:
-				return
+				break L
 			case <-ticker.C:
-				if err := o.enc.Flush(); err != nil {
-					return
+				if err := o.flush(); err != nil {
+					break L
 				}
 				filename := strftime.Format(o.config.GetPath(), time.Now())
 				if filename != o.currentFilename {
-					o.enc.Close()
-					o.writer.Close()
-					ticker.Stop()
-					return
+					o.close()
+					break L
 				}
 			}
 		}
+		ticker.Stop()
 	}()
 	return nil
 }
 
+func (o *DnstapFstrmFileOutput) flush() error {
+	o.mux.Lock()
+	defer o.mux.Unlock()
+	return o.enc.Flush()
+}
+
 func (o *DnstapFstrmFileOutput) write(frame []byte) error {
+	o.mux.Lock()
+	defer o.mux.Unlock()
 	if _, err := o.enc.Write(frame); err != nil {
 		return err
 	}
@@ -90,6 +100,8 @@ func (o *DnstapFstrmFileOutput) write(frame []byte) error {
 }
 
 func (o *DnstapFstrmFileOutput) close() {
+	o.mux.Lock()
+	defer o.mux.Unlock()
 	o.enc.Flush()
 	o.enc.Close()
 	o.writer.Close()
