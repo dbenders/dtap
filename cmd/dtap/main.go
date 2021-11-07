@@ -36,9 +36,8 @@ func init() {
 }
 
 var (
-	flagConfigFile     = flag.String("c", "dtap.toml", "config file path")
-	flagLogLevel       = flag.String("d", "info", "log level(debug,info,warn,error,fatal)")
-	flagExporterListen = flag.String("e", "", "prometheus exporter listen address")
+	flagConfigFile = flag.String("c", "dtap.toml", "config file path")
+	flagLogLevel   = flag.String("d", "info", "log level(debug,info,warn,error,fatal)")
 )
 
 func usage() {
@@ -87,11 +86,11 @@ func main() {
 	}
 	var input []dtap.Input
 	var output []dtap.Output
-	if *flagExporterListen != "" {
-		go prometheusExporter(context.Background(), *flagExporterListen)
-	}
 	config, err := dtap.NewConfigFromFile(*flagConfigFile)
 	fatalCheck(err)
+	if config.Metrics.Address != "" {
+		go metricsExporter(config.Metrics.Address, config.Metrics.Interval)
+	}
 	for _, ic := range config.InputFile {
 		i, err := dtap.NewDnstapFstrmFileInput(ic)
 		fatalCheck(err)

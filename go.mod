@@ -9,6 +9,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/bsm/sarama-cluster v2.1.15+incompatible // indirect
+	github.com/cyberdelia/go-metrics-graphite v0.0.0-20161219230853-39f87cc3b432 // indirect
 	github.com/dangkaka/go-kafka-avro v0.0.0-20181108134201-d57aece51a15
 	github.com/dnstap/golang-dnstap v0.4.0
 	github.com/farsightsec/golang-framestream v0.3.0
@@ -29,6 +30,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/common v0.0.0-20181126121408-4724e9255275
+	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0

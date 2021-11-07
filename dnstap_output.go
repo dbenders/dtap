@@ -19,14 +19,14 @@ package dtap
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )
 
 type DnstapOutputParams struct {
 	BufferSize  uint
-	InCounter   prometheus.Counter
-	LostCounter prometheus.Counter
+	InCounter   metrics.Counter
+	LostCounter metrics.Counter
 	Handler     OutputHandler
 }
 
