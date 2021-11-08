@@ -54,44 +54,37 @@ type Config struct {
 
 var (
 	DefaultCounters = []OutputPrometheusMetrics{
-		OutputPrometheusMetrics{
+		{
 			Name:   "dtap_query_qtype_total",
 			Help:   "Total number of queries with a given query type.",
 			Labels: []string{"Qtype"},
-		},
-		OutputPrometheusMetrics{
+		}, {
 			Name:   "dtap_query_rcode_total",
 			Help:   "Total number of queries with a given query type.",
 			Labels: []string{"Rcode"},
-		},
-		OutputPrometheusMetrics{
+		}, {
 			Name:   "dtap_query_tc_bit_total",
 			Help:   "Total number of queries with a given query tc bit.",
 			Labels: []string{"TC"},
-		},
-		OutputPrometheusMetrics{
+		}, {
 			Name:   "dtap_query_ad_bit_total",
 			Help:   "Total number of queries with a given query ad bit.",
 			Labels: []string{"AD"},
-		},
-		OutputPrometheusMetrics{
+		}, {
 			Name:   "dtap_query_socket_protocol_total",
 			Help:   "Total number of queries with a given query transport rotocol.",
 			Labels: []string{"SocketProtocol"},
-		},
-		OutputPrometheusMetrics{
+		}, {
 			Name:   "dtap_query_socket_family_total",
 			Help:   "Total number of queries with a given query IP Protocol.",
 			Labels: []string{"SocketFamily"},
-		},
-		OutputPrometheusMetrics{
+		}, {
 			Name:           "dtap_query_tld_total",
 			Help:           "Total number of queries with a given query tld.",
 			Labels:         []string{"TopLevelDomainName"},
 			ExpireInterval: 5,
 			ExpireSec:      60,
-		},
-		OutputPrometheusMetrics{
+		}, {
 			Name:           "dtap_query_sld_total",
 			Help:           "Total number of queries with a given query tld.",
 			Labels:         []string{"TopLevelDomainName"},
