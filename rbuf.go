@@ -3,17 +3,17 @@ package dtap
 import (
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rcrowley/go-metrics"
 )
 
 type RBuf struct {
 	channel     chan []byte
 	mux         sync.Mutex
-	inCounter   prometheus.Counter
-	lostCounter prometheus.Counter
+	inCounter   metrics.Counter
+	lostCounter metrics.Counter
 }
 
-func NewRbuf(size uint, inCounter prometheus.Counter, lostCounter prometheus.Counter) *RBuf {
+func NewRbuf(size uint, inCounter metrics.Counter, lostCounter metrics.Counter) *RBuf {
 	rbuf := &RBuf{
 		channel:     make(chan []byte, size),
 		mux:         sync.Mutex{},
@@ -31,10 +31,10 @@ func (r *RBuf) Write(b []byte) {
 	r.mux.Lock()
 	select {
 	case r.channel <- b:
-		r.inCounter.Inc()
+		r.inCounter.Inc(1)
 	default:
-		r.lostCounter.Inc()
-		r.inCounter.Inc()
+		r.lostCounter.Inc(1)
+		r.inCounter.Inc(1)
 		<-r.channel
 		r.channel <- b
 	}

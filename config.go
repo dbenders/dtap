@@ -28,6 +28,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
@@ -37,6 +38,7 @@ import (
 )
 
 type Config struct {
+	Metrics          *MetricsConfig
 	InputMsgBuffer   uint
 	InputUnix        []*InputUnixSocketConfig
 	InputFile        []*InputFileConfig
@@ -50,6 +52,11 @@ type Config struct {
 	OutputNats       []*OutputNatsConfig
 	OutputPrometheus []*OutputPrometheus
 	OutputStdout     []*OutputStdoutConfig
+}
+
+type MetricsConfig struct {
+	Address  string
+	Interval time.Duration
 }
 
 var (
@@ -223,6 +230,8 @@ func NewConfigFromReader(r io.Reader) (*Config, error) {
 	v := viper.New()
 	v.SetConfigType("toml")
 	v.SetDefault("InputMsgBuffer", 10000)
+	v.SetDefault("Metrics.Interval", 1*time.Second)
+
 	if err := v.ReadConfig(r); err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
