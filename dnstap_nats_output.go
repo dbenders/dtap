@@ -27,7 +27,7 @@ import (
 	framestream "github.com/farsightsec/golang-framestream"
 	"github.com/golang/protobuf/proto"
 	nats "github.com/nats-io/go-nats"
-	"github.com/prometheus/common/log"
+	log "github.com/sirupsen/logrus"
 )
 
 type DnstapNatsOutput struct {
