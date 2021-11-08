@@ -447,6 +447,9 @@ func (o *OutputKafkaConfig) Validate() *ValidationError {
 	if len(o.Hosts) == 0 {
 		valerr.Add(errors.New("Hosts must not be empty"))
 	}
+	if len(o.SchemaRegistries) == 0 {
+		valerr.Add(errors.New("Schema Registries must not be empty"))
+	}
 	otype := strings.ToLower(o.OutputType)
 	switch otype {
 	case "json", "flat_json":
