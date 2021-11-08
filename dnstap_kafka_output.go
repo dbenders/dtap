@@ -22,12 +22,15 @@ import (
 	"encoding/json"
 	"fmt"
 
+	dnstap "github.com/dnstap/golang-dnstap"
+	"github.com/golang/protobuf/proto"
+	"github.com/rcrowley/go-metrics"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/dangkaka/go-kafka-avro"
 	"github.com/linkedin/goavro"
 
 	"github.com/Shopify/sarama"
-	dnstap "github.com/dnstap/golang-dnstap"
-	"github.com/golang/protobuf/proto"
 )
 
 //go:embed assets/flat.avsc
@@ -40,7 +43,7 @@ type KafkaClient interface {
 type DnstapKafkaOutput struct {
 	config        *OutputKafkaConfig
 	kafkaConfig   *sarama.Config
-	producer      sarama.SyncProducer
+	producer      sarama.AsyncProducer
 	registry      *kafka.CachedSchemaRegistryClient
 	valueCodec    *goavro.Codec
 	valueSchemaID []byte
@@ -49,10 +52,27 @@ type DnstapKafkaOutput struct {
 }
 
 func NewDnstapKafkaOutput(config *OutputKafkaConfig, params *DnstapOutputParams) (*DnstapOutput, error) {
+	// TODO: check
+	sarama.Logger = log.New()
 	kafkaConfig := sarama.NewConfig()
-	kafkaConfig.Producer.Return.Successes = true
+	kafkaConfig.ClientID = "PERT-DNSTAP"
+
+	kafkaConfig.Producer.Return.Successes = false //no confirme los ok
 	kafkaConfig.Producer.Return.Errors = true
-	kafkaConfig.Producer.Retry.Max = int(config.GetRetry())
+	kafkaConfig.Producer.Retry.Max = 1 // int(config.GetRetry())
+	kafkaConfig.Producer.Partitioner = sarama.NewRandomPartitioner
+
+	// PERT-NB prueba sasl plain
+	// kafkaConfig.Net.SASL.User = "user_dtap"
+	// kafkaConfig.Net.SASL.Password = "#dn5t4p"
+	// kafkaConfig.Net.SASL.Handshake = true
+	// kafkaConfig.Net.SASL.Enable = true
+	log.Info("Config Kafka dtap-TECO")
+	//PERT-NB prueba metricas
+	kafkaConfig.MetricRegistry = metrics.NewPrefixedChildRegistry(metrics.DefaultRegistry, "sarama.")
+	//PERT-NB prueba compress
+	// NO ANDA kafkaConfig.Producer.Compression = sarama.CompressionZSTD
+	kafkaConfig.Producer.Compression = sarama.CompressionSnappy
 
 	keyCodec, err := goavro.NewCodec(`{"type": "string"}`)
 	if err != nil {
@@ -75,10 +95,18 @@ func NewDnstapKafkaOutput(config *OutputKafkaConfig, params *DnstapOutputParams)
 
 func (o *DnstapKafkaOutput) open() error {
 	var err error
-	o.producer, err = sarama.NewSyncProducer(o.config.Hosts, o.kafkaConfig)
+	o.producer, err = sarama.NewAsyncProducer(o.config.Hosts, o.kafkaConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create kafka producer: %w", err)
 	}
+	// TODO: check what happens on error
+	// prueba captura errores
+	go func() {
+		for err := range o.producer.Errors() {
+			log.Info("Failed to write to kafka:", err)
+		}
+	}()
+
 	if o.config.GetOutputType() == "avro" {
 		if o.valueSchemaID, err = o.getSchemaID(o.config.GetTopic()+"-value", o.valueCodec); err != nil {
 			return fmt.Errorf("failed to get schema id: %w", err)
@@ -154,9 +182,10 @@ func (o *DnstapKafkaOutput) write(frame []byte) error {
 		Key:   k,
 		Value: v,
 	}
-	_, _, err := o.producer.SendMessage(msg)
 
-	return err
+	// _, _, err := o.producer.SendMessage(msg)
+	o.producer.Input() <- msg
+	return nil
 }
 
 func (o *DnstapKafkaOutput) close() {
