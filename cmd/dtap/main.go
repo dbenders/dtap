@@ -217,10 +217,9 @@ func main() {
 	outputCtx, outputCancel := context.WithCancel(context.Background())
 	owg := &sync.WaitGroup{}
 	for _, o := range output {
-		child, _ := context.WithCancel(outputCtx)
 		owg.Add(1)
 		go func(o dtap.Output) {
-			o.Run(child)
+			o.Run(outputCtx)
 			owg.Done()
 		}(o)
 	}
@@ -230,10 +229,9 @@ func main() {
 
 	iwg := &sync.WaitGroup{}
 	for _, i := range input {
-		child, _ := context.WithCancel(inputCtx)
 		iwg.Add(1)
 		go func(i dtap.Input) {
-			err := i.Run(child, iRBuf)
+			err := i.Run(inputCtx, iRBuf)
 			if err != nil {
 				log.Error(err)
 				fatalCh <- err

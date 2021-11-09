@@ -57,16 +57,13 @@ func (i *DnstapFstrmSocketInput) runRead(ctx context.Context, rbuf *RBuf) {
 			log.Debugf("failed to create NewDnstapFstrmInput: %s", err)
 			continue
 		}
-		childCtx, _ := context.WithCancel(readCtx)
-		go input.Read(childCtx, rbuf)
+		go input.Read(readCtx, rbuf)
 	}
-	return
 }
 
 func (i *DnstapFstrmSocketInput) Run(ctx context.Context, rbuf *RBuf) error {
 	var err error
-	childCtx, _ := context.WithCancel(ctx)
-	go i.runRead(childCtx, rbuf)
+	go i.runRead(ctx, rbuf)
 	select {
 	case <-ctx.Done():
 		i.listener.Close()

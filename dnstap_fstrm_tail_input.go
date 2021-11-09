@@ -123,20 +123,19 @@ func (i *DnstapFstrmTailInput) runReadFile(ctx context.Context, filename string,
 		case <-modify:
 		}
 	}
-	delete(i.readers, filename)
-	return nil
+	// unreached
+	// delete(i.readers, filename)
+	// return nil
 }
 func (i *DnstapFstrmTailInput) Run(ctx context.Context, rbuf *RBuf) error {
 	var err error
-	childCtx, _ := context.WithCancel(ctx)
-	go i.runSearchPath(childCtx)
+	go i.runSearchPath(ctx)
 L:
 	for {
 		select {
 		case filename := <-i.modifies:
 			i.readers[filename] = true
-			childCtx, _ := context.WithCancel(ctx)
-			go i.runReadFile(childCtx, filename, rbuf)
+			go i.runReadFile(ctx, filename, rbuf)
 		case err = <-i.readError:
 			break L
 		case <-ctx.Done():

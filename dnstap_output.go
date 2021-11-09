@@ -56,8 +56,7 @@ L:
 				continue
 			}
 			log.Debug("success open")
-			childCtx, _ := context.WithCancel(ctx)
-			err := o.run(childCtx)
+			err := o.run(ctx)
 			log.Debug("close handle close")
 			o.handler.close()
 

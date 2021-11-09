@@ -88,7 +88,6 @@ func NewDnstapFstrmFileInput(config *InputFileConfig) (*DnstapFstrmFileInput, er
 }
 
 func (i *DnstapFstrmFileInput) Run(ctx context.Context, rbuf *RBuf) error {
-	childCtx, _ := context.WithCancel(ctx)
-	err := i.input.Read(childCtx, rbuf)
+	err := i.input.Read(ctx, rbuf)
 	return err
 }
