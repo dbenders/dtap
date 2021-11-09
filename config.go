@@ -38,7 +38,6 @@ import (
 )
 
 type Config struct {
-	Metrics          *MetricsConfig
 	InputMsgBuffer   uint
 	InputUnix        []*InputUnixSocketConfig
 	InputFile        []*InputFileConfig
@@ -52,11 +51,8 @@ type Config struct {
 	OutputNats       []*OutputNatsConfig
 	OutputPrometheus []*OutputPrometheus
 	OutputStdout     []*OutputStdoutConfig
-}
-
-type MetricsConfig struct {
-	Address  string
-	Interval time.Duration
+	MetricsGraphite  *MetricsGraphiteConfig
+	MetricsConsole   *MetricsConsoleConfig
 }
 
 var (
@@ -176,6 +172,19 @@ func (c *Config) Validate() []error {
 			errs = append(errs, err)
 		}
 	}
+	if c.MetricsGraphite != nil {
+		if err := c.MetricsGraphite.Validate(); err != nil {
+			err.configType = "MetricsGraphite"
+			errs = append(errs, err)
+		}
+	}
+	if c.MetricsConsole != nil {
+		if err := c.MetricsConsole.Validate(); err != nil {
+			err.configType = "MetricsConsole"
+			errs = append(errs, err)
+		}
+	}
+
 	return errs
 }
 
@@ -223,7 +232,6 @@ func NewConfigFromReader(r io.Reader) (*Config, error) {
 	v := viper.New()
 	v.SetConfigType("toml")
 	v.SetDefault("InputMsgBuffer", 10000)
-	v.SetDefault("Metrics.Interval", 1*time.Second)
 
 	if err := v.ReadConfig(r); err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)
@@ -721,6 +729,34 @@ func (o *FlatConfig) Validate() *ValidationError {
 		if o.IPv6Mask > 128 {
 			valerr.Add(errors.New("IPv4Mask must include range 0 to 128"))
 		}
+	}
+	return valerr.Err()
+}
+
+type MetricsGraphiteConfig struct {
+	Address  string
+	Interval time.Duration
+}
+
+type MetricsConsoleConfig struct {
+	Interval time.Duration
+}
+
+func (c *MetricsGraphiteConfig) Validate() *ValidationError {
+	valerr := NewValidationError()
+	if _, err := net.ResolveTCPAddr("tcp", c.Address); err != nil {
+		valerr.Add(err)
+	}
+	if c.Interval == 0 {
+		valerr.Add(errors.New("interval cannot be zero"))
+	}
+	return valerr.Err()
+}
+
+func (c *MetricsConsoleConfig) Validate() *ValidationError {
+	valerr := NewValidationError()
+	if c.Interval == 0 {
+		valerr.Add(errors.New("interval cannot be zero"))
 	}
 	return valerr.Err()
 }

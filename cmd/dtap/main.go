@@ -86,11 +86,29 @@ func main() {
 	}
 	var input []dtap.Input
 	var output []dtap.Output
+	var metricExporters []dtap.MetricsExporter
+
 	config, err := dtap.NewConfigFromFile(*flagConfigFile)
 	fatalCheck(err)
-	if config.Metrics.Address != "" {
-		go metricsExporter(config.Metrics.Address, config.Metrics.Interval)
+
+	if errs := config.Validate(); len(errs) > 0 {
+		for _, err := range errs {
+			log.Error(err)
+		}
+		log.Fatal("Error reading config file")
 	}
+
+	if config.MetricsGraphite != nil {
+		exp, err := dtap.NewGraphiteExporter(config.MetricsGraphite)
+		fatalCheck(err)
+		metricExporters = append(metricExporters, exp)
+	}
+	if config.MetricsConsole != nil {
+		exp, err := dtap.NewConsoleExporter(config.MetricsConsole)
+		fatalCheck(err)
+		metricExporters = append(metricExporters, exp)
+	}
+
 	for _, ic := range config.InputFile {
 		i, err := dtap.NewDnstapFstrmFileInput(ic)
 		fatalCheck(err)
@@ -209,6 +227,10 @@ func main() {
 
 	if len(output) == 0 {
 		log.Fatal("No output settings")
+	}
+
+	for _, exp := range metricExporters {
+		exp.Start()
 	}
 
 	iRBuf := dtap.NewRbuf(config.InputMsgBuffer, TotalRecvInputFrame, TotalLostInputFrame)
