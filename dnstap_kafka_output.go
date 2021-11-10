@@ -69,7 +69,9 @@ func NewDnstapKafkaOutput(config *OutputKafkaConfig, params *DnstapOutputParams)
 	// kafkaConfig.Net.SASL.Enable = true
 	log.Info("Config Kafka dtap-TECO")
 	//PERT-NB prueba metricas
-	kafkaConfig.MetricRegistry = metrics.NewPrefixedChildRegistry(metrics.DefaultRegistry, "sarama.")
+	if config.Metrics {
+		kafkaConfig.MetricRegistry = metrics.NewPrefixedChildRegistry(metrics.DefaultRegistry, "sarama.")
+	}
 	//PERT-NB prueba compress
 	// NO ANDA kafkaConfig.Producer.Compression = sarama.CompressionZSTD
 	kafkaConfig.Producer.Compression = sarama.CompressionSnappy

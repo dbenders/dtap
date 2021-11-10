@@ -447,6 +447,7 @@ type OutputKafkaConfig struct {
 	OutputType       string
 	Buffer           OutputBufferConfig
 	Flat             FlatConfig
+	Metrics          bool
 }
 
 func (o *OutputKafkaConfig) Validate() *ValidationError {

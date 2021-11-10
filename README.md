@@ -98,6 +98,7 @@ Make flatting DNSTAP message,And it forawrd to kafka host.
 [[OutputKafks]]
 Hosts = ["kafka.example.jp:9092"]
 Topic  = "dnstap_message"
+Metrics = true
 ```
 
 
@@ -112,4 +113,20 @@ Subject  = "dnstap"
 User = "dnstap"
 Password = "hogehoge
 
+```
+
+## Metrics config
+### Console
+Write metrics to the console
+```
+[MetricsConsole]
+Interval="10s"
+```
+
+### Graphite
+Write metrics to graphite
+```
+[MetricsGraphite]
+Interval="10s"
+Address="192.168.10.3:2003"
 ```
