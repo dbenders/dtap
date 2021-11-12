@@ -18,6 +18,7 @@ package dtap
 
 import (
 	"context"
+	"sync"
 
 	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -91,4 +92,36 @@ L:
 
 func (o *DnstapOutput) SetMessage(b []byte) {
 	o.rbuf.Write(b)
+}
+
+type DnstapMultiWorkerOutput struct {
+	outputs []*DnstapOutput
+	curr    int
+}
+
+func NewDnstapMultiWorkerOutput(params *DnstapOutputParams, workers int) *DnstapMultiWorkerOutput {
+	o := DnstapMultiWorkerOutput{outputs: make([]*DnstapOutput, workers)}
+	for i := 0; i < workers; i++ {
+		o.outputs[i] = NewDnstapOutput(params)
+	}
+	return &o
+}
+
+func (o *DnstapMultiWorkerOutput) Run(ctx context.Context) {
+	var wg sync.WaitGroup
+	for _, out := range o.outputs {
+		wg.Add(1)
+		go func(out Output) {
+			defer wg.Done()
+			out.Run(ctx)
+		}(out)
+	}
+	log.Info("Wait for all workers")
+	wg.Wait()
+	log.Info("All workers done")
+}
+
+func (o *DnstapMultiWorkerOutput) SetMessage(msg []byte) {
+	o.outputs[o.curr].SetMessage(msg)
+	o.curr = (o.curr + 1) % len(o.outputs)
 }

@@ -448,6 +448,7 @@ type OutputKafkaConfig struct {
 	Buffer           OutputBufferConfig
 	Flat             FlatConfig
 	Metrics          bool
+	Workers          int
 }
 
 func (o *OutputKafkaConfig) Validate() *ValidationError {
@@ -467,6 +468,9 @@ func (o *OutputKafkaConfig) Validate() *ValidationError {
 		valerr.Add(errors.New("OutputType must be avro, json or protobuf"))
 	}
 	o.OutputType = otype
+	if o.Workers == 0 {
+		o.Workers = 1
+	}
 	return valerr.Err()
 }
 

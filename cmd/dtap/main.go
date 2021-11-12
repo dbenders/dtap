@@ -23,11 +23,13 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/pprof"
 	"sync"
 	"syscall"
 
 	"github.com/mimuret/dtap"
 	log "github.com/sirupsen/logrus"
+	//_ "net/http/pprof"
 )
 
 func init() {
@@ -38,6 +40,8 @@ func init() {
 var (
 	flagConfigFile = flag.String("c", "dtap.toml", "config file path")
 	flagLogLevel   = flag.String("d", "info", "log level(debug,info,warn,error,fatal)")
+	flagCPUProfile = flag.String("cpuprofile", "", "CPU Profiling output file")
+	flagMemProfile = flag.String("memprofile", "", "Memory Profiling output file")
 )
 
 func usage() {
@@ -68,6 +72,16 @@ func main() {
 	flag.Usage = usage
 
 	flag.Parse()
+
+	if *flagCPUProfile != "" {
+		f, err := os.Create(*flagCPUProfile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
 	// set log level
 	switch *flagLogLevel {
 	case "debug":
@@ -184,9 +198,7 @@ func main() {
 			LostCounter: TotalLostInputFrame,
 		}
 		o, err := dtap.NewDnstapKafkaOutput(oc, params)
-		if err != nil {
-			log.Fatal(err)
-		}
+		fatalCheck(err)
 		output = append(output, o)
 	}
 
@@ -232,6 +244,12 @@ func main() {
 	for _, exp := range metricExporters {
 		exp.Start()
 	}
+
+	// remove
+	// go func() {
+	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
+	// }()
+	// remove
 
 	iRBuf := dtap.NewRbuf(config.InputMsgBuffer, TotalRecvInputFrame, TotalLostInputFrame)
 	fatalCh := make(chan error)
@@ -293,5 +311,17 @@ func main() {
 
 	iRBuf.Close()
 
-	os.Exit(0)
+	if *flagMemProfile != "" {
+		f, err := os.Create(*flagMemProfile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close()
+		runtime.GC()
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+	}
+
+	//os.Exit(0)
 }

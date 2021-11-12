@@ -51,7 +51,7 @@ type DnstapKafkaOutput struct {
 	keySchemaID   []byte
 }
 
-func NewDnstapKafkaOutput(config *OutputKafkaConfig, params *DnstapOutputParams) (*DnstapOutput, error) {
+func NewDnstapKafkaOutput(config *OutputKafkaConfig, params *DnstapOutputParams) (Output, error) {
 	// TODO: check
 	sarama.Logger = log.New()
 	kafkaConfig := sarama.NewConfig()
@@ -92,7 +92,11 @@ func NewDnstapKafkaOutput(config *OutputKafkaConfig, params *DnstapOutputParams)
 		keyCodec:    keyCodec,
 		valueCodec:  valueCodec,
 	}
-	return NewDnstapOutput(params), nil
+	if config.Workers > 1 {
+		return NewDnstapMultiWorkerOutput(params, config.Workers), nil
+	} else {
+		return NewDnstapOutput(params), nil
+	}
 }
 
 func (o *DnstapKafkaOutput) open() error {
@@ -191,4 +195,6 @@ func (o *DnstapKafkaOutput) write(frame []byte) error {
 }
 
 func (o *DnstapKafkaOutput) close() {
+	// TODO: close errors goroutine
+	// o.producer.Close()
 }
