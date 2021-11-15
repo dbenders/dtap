@@ -742,8 +742,9 @@ func (o *FlatConfig) Validate() *ValidationError {
 }
 
 type MetricsGraphiteConfig struct {
-	Address  string
-	Interval time.Duration
+	Address   string
+	Interval  time.Duration
+	Namespace string
 }
 
 type MetricsConsoleConfig struct {
@@ -758,6 +759,11 @@ func (c *MetricsGraphiteConfig) Validate() *ValidationError {
 	if c.Interval == 0 {
 		valerr.Add(errors.New("interval cannot be zero"))
 	}
+
+	if c.Namespace == "" {
+		c.Namespace = "dtap"
+	}
+
 	return valerr.Err()
 }
 

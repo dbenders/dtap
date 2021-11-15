@@ -10,8 +10,9 @@ import (
 )
 
 type GraphiteExporter struct {
-	address  *net.TCPAddr
-	interval time.Duration
+	address   *net.TCPAddr
+	interval  time.Duration
+	namespace string
 }
 
 func NewGraphiteExporter(cfg *MetricsGraphiteConfig) (*GraphiteExporter, error) {
@@ -20,12 +21,13 @@ func NewGraphiteExporter(cfg *MetricsGraphiteConfig) (*GraphiteExporter, error) 
 		return nil, err
 	}
 	return &GraphiteExporter{
-		address:  addr,
-		interval: cfg.Interval,
+		address:   addr,
+		interval:  cfg.Interval,
+		namespace: cfg.Namespace,
 	}, nil
 }
 
 func (e *GraphiteExporter) Start() {
 	log.Info("start graphite metrics exporter")
-	go graphite.Graphite(metrics.DefaultRegistry, e.interval, "metrics", e.address)
+	go graphite.Graphite(metrics.DefaultRegistry, e.interval, e.namespace, e.address)
 }
