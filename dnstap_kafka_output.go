@@ -102,8 +102,7 @@ func (o *DnstapKafkaOutput) open() error {
 	if err != nil {
 		return fmt.Errorf("failed to create kafka producer: %w", err)
 	}
-	// TODO: check what happens on error
-	// prueba captura errores
+
 	go func() {
 		for err := range o.producer.Errors() {
 			log.Info("Failed to write to kafka:", err)
@@ -192,6 +191,5 @@ func (o *DnstapKafkaOutput) write(frame []byte) error {
 }
 
 func (o *DnstapKafkaOutput) close() {
-	// TODO: close errors goroutine
-	// o.producer.Close()
+	o.producer.AsyncClose()
 }
