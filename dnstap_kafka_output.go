@@ -21,6 +21,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	dnstap "github.com/dnstap/golang-dnstap"
 	"github.com/golang/protobuf/proto"
@@ -41,14 +42,15 @@ type KafkaClient interface {
 }
 
 type DnstapKafkaOutput struct {
-	config        *OutputKafkaConfig
-	kafkaConfig   *sarama.Config
-	producer      sarama.AsyncProducer
-	registry      *kafka.CachedSchemaRegistryClient
-	valueCodec    *goavro.Codec
-	valueSchemaID []byte
-	keyCodec      *goavro.Codec
-	keySchemaID   []byte
+	config           *OutputKafkaConfig
+	kafkaConfig      *sarama.Config
+	producer         sarama.AsyncProducer
+	registry         *kafka.CachedSchemaRegistryClient
+	valueCodec       *goavro.Codec
+	valueSchemaID    []byte
+	keyCodec         *goavro.Codec
+	keySchemaID      []byte
+	errorLoggerClose chan bool
 }
 
 func NewDnstapKafkaOutput(config *OutputKafkaConfig, params *DnstapOutputParams) (Output, error) {
@@ -102,11 +104,13 @@ func (o *DnstapKafkaOutput) open() error {
 	if err != nil {
 		return fmt.Errorf("failed to create kafka producer: %w", err)
 	}
+	o.errorLoggerClose = make(chan bool, 1)
 
 	go func() {
 		for err := range o.producer.Errors() {
 			log.Info("Failed to write to kafka:", err)
 		}
+		o.errorLoggerClose <- true
 	}()
 
 	if o.config.GetOutputType() == "avro" {
@@ -192,4 +196,10 @@ func (o *DnstapKafkaOutput) write(frame []byte) error {
 
 func (o *DnstapKafkaOutput) close() {
 	o.producer.AsyncClose()
+
+	select {
+	case <-o.errorLoggerClose:
+	case <-time.After(3 * time.Second):
+		log.Warn("Kafka output close timeout")
+	}
 }
