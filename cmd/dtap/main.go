@@ -152,7 +152,7 @@ func main() {
 		params := &dtap.DnstapOutputParams{
 			BufferSize:  oc.Buffer.GetBufferSize(),
 			InCounter:   TotalRecvOutputFrame,
-			LostCounter: TotalLostInputFrame,
+			LostCounter: TotalLostOutputFrame,
 		}
 		o := dtap.NewDnstapFstrmFileOutput(oc, params)
 		output = append(output, o)
@@ -162,7 +162,7 @@ func main() {
 		params := &dtap.DnstapOutputParams{
 			BufferSize:  oc.Buffer.GetBufferSize(),
 			InCounter:   TotalRecvOutputFrame,
-			LostCounter: TotalLostInputFrame,
+			LostCounter: TotalLostOutputFrame,
 		}
 		o := dtap.NewDnstapFstrmTCPSocketOutput(oc, params)
 		output = append(output, o)
@@ -172,7 +172,7 @@ func main() {
 		params := &dtap.DnstapOutputParams{
 			BufferSize:  oc.Buffer.GetBufferSize(),
 			InCounter:   TotalRecvOutputFrame,
-			LostCounter: TotalLostInputFrame,
+			LostCounter: TotalLostOutputFrame,
 		}
 		o := dtap.NewDnstapFstrmUnixSockOutput(oc, params)
 		output = append(output, o)
@@ -182,7 +182,7 @@ func main() {
 		params := &dtap.DnstapOutputParams{
 			BufferSize:  oc.Buffer.GetBufferSize(),
 			InCounter:   TotalRecvOutputFrame,
-			LostCounter: TotalLostInputFrame,
+			LostCounter: TotalLostOutputFrame,
 		}
 		o := dtap.NewDnstapFluentdOutput(oc, params)
 		output = append(output, o)
@@ -198,7 +198,7 @@ func main() {
 		params := &dtap.DnstapOutputParams{
 			BufferSize:  oc.Buffer.GetBufferSize(),
 			InCounter:   TotalRecvOutputFrame,
-			LostCounter: TotalLostInputFrame,
+			LostCounter: TotalLostOutputFrame,
 		}
 		var o dtap.Output
 		if oc.Workers > 1 {
@@ -219,7 +219,7 @@ func main() {
 		params := &dtap.DnstapOutputParams{
 			BufferSize:  oc.Buffer.GetBufferSize(),
 			InCounter:   TotalRecvOutputFrame,
-			LostCounter: TotalLostInputFrame,
+			LostCounter: TotalLostOutputFrame,
 		}
 		o := dtap.NewDnstapNatsOutput(oc, params)
 		output = append(output, o)
@@ -235,7 +235,7 @@ func main() {
 		params := &dtap.DnstapOutputParams{
 			BufferSize:  oc.Buffer.GetBufferSize(),
 			InCounter:   TotalRecvOutputFrame,
-			LostCounter: TotalLostInputFrame,
+			LostCounter: TotalLostOutputFrame,
 		}
 		o := dtap.NewDnstapPrometheusOutput(oc, params)
 		output = append(output, o)
@@ -244,7 +244,7 @@ func main() {
 		params := &dtap.DnstapOutputParams{
 			BufferSize:  oc.Buffer.GetBufferSize(),
 			InCounter:   TotalRecvOutputFrame,
-			LostCounter: TotalLostInputFrame,
+			LostCounter: TotalLostOutputFrame,
 		}
 		o := dtap.NewDnstapStdoutOutput(oc, params)
 		output = append(output, o)
