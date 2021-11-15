@@ -120,13 +120,14 @@ Password = "hogehoge
 Write metrics to the console
 ```
 [MetricsConsole]
-Interval="10s"
+interval="10s"
 ```
 
 ### Graphite
 Write metrics to graphite
 ```
 [MetricsGraphite]
-Interval="10s"
-Address="192.168.10.3:2003"
+interval="10s"
+address="192.168.10.3:2003"
+namespace="my.own.namespace"
 ```
