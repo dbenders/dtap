@@ -27,9 +27,10 @@ import (
 	"sync"
 	"syscall"
 
+	// _ "net/http/pprof"
+
 	"github.com/mimuret/dtap"
 	log "github.com/sirupsen/logrus"
-	//_ "net/http/pprof"
 )
 
 func init() {
@@ -67,6 +68,8 @@ func fatalCheck(err error) {
 
 func main() {
 	var err error
+	// runtime.SetMutexProfileFraction(1)
+	// runtime.SetBlockProfileRate(1)
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Usage = usage
@@ -202,7 +205,7 @@ func main() {
 			outs := make([]dtap.Output, oc.Workers)
 			for i := 0; i < oc.Workers; i++ {
 				outs[i], err = dtap.NewDnstapKafkaOutput(oc, params)
-		fatalCheck(err)
+				fatalCheck(err)
 			}
 			o = dtap.NewDnstapMultiWorkerOutput(outs)
 		} else {
@@ -255,11 +258,9 @@ func main() {
 		exp.Start()
 	}
 
-	// remove
 	// go func() {
 	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
 	// }()
-	// remove
 
 	iRBuf := dtap.NewRbuf(config.InputMsgBuffer, TotalRecvInputFrame, TotalLostInputFrame)
 	fatalCh := make(chan error)
