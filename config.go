@@ -27,6 +27,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -639,25 +640,14 @@ type FlatConfig struct {
 	EnableHashIP   bool
 	ipHashSalt     []byte `toml:"-"`
 	IPHashSaltPath string
+	saltMutex      sync.RWMutex
 }
 
 func (o *FlatConfig) GetIPv4Mask() net.IPMask {
-	if o.ipv4Mask == nil {
-		if o.IPv4Mask == 0 {
-			o.IPv4Mask = 24
-		}
-		o.ipv4Mask = net.CIDRMask(int(o.IPv4Mask), 32)
-	}
 	return o.ipv4Mask
 }
 
 func (o *FlatConfig) GetIPv6Mask() net.IPMask {
-	if o.ipv6Mask == nil {
-		if o.IPv6Mask == 0 {
-			o.IPv6Mask = 48
-		}
-		o.ipv6Mask = net.CIDRMask(int(o.IPv6Mask), 128)
-	}
 	return o.ipv6Mask
 }
 
@@ -674,20 +664,15 @@ func (o *FlatConfig) GetIPHashSaltPath() string {
 }
 
 func (o *FlatConfig) GetIPHashSalt() []byte {
-	if o.ipHashSalt == nil {
-		if o.GetIPHashSaltPath() != "" {
-			o.LoadSalt()
-		}
-	}
-	if o.ipHashSalt == nil {
-		o.ipHashSalt = make([]byte, 32)
-		rand.Read(o.ipHashSalt)
-	}
+	o.saltMutex.RLock()
+	defer o.saltMutex.RUnlock()
 	return o.ipHashSalt
 }
 
 func (o *FlatConfig) LoadSalt() {
-	if o.GetIPHashSaltPath() != "" {
+	o.saltMutex.Lock()
+	defer o.saltMutex.Unlock()
+	if o.IPHashSaltPath != "" {
 		o.ipHashSalt, _ = ioutil.ReadFile(o.GetIPHashSaltPath())
 	}
 }
@@ -698,7 +683,7 @@ func (o *FlatConfig) WatchSalt(ctx context.Context, ready chan struct{}) {
 		log.Fatal(err)
 	}
 	defer watcher.Close()
-	err = watcher.Add(o.GetIPHashSaltPath())
+	err = watcher.Add(o.IPHashSaltPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -729,12 +714,30 @@ func (o *FlatConfig) Validate() *ValidationError {
 		if o.IPv4Mask > 32 {
 			valerr.Add(errors.New("IPv4Mask must include range 0 to 32"))
 		}
+	} else {
+		o.IPv4Mask = 24
 	}
+	o.ipv4Mask = net.CIDRMask(int(o.IPv4Mask), 32)
+
 	if o.IPv6Mask != 0 {
 		if o.IPv6Mask > 128 {
 			valerr.Add(errors.New("IPv4Mask must include range 0 to 128"))
 		}
+	} else {
+		o.IPv6Mask = 48
 	}
+	o.ipv6Mask = net.CIDRMask(int(o.IPv6Mask), 128)
+
+	if o.ipHashSalt == nil {
+		if o.IPHashSaltPath != "" {
+			o.LoadSalt()
+		}
+	}
+	if o.ipHashSalt == nil {
+		o.ipHashSalt = make([]byte, 32)
+		rand.Read(o.ipHashSalt)
+	}
+
 	return valerr.Err()
 }
 

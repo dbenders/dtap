@@ -92,11 +92,8 @@ func NewDnstapKafkaOutput(config *OutputKafkaConfig, params *DnstapOutputParams)
 		keyCodec:    keyCodec,
 		valueCodec:  valueCodec,
 	}
-	if config.Workers > 1 {
-		return NewDnstapMultiWorkerOutput(params, config.Workers), nil
-	} else {
-		return NewDnstapOutput(params), nil
-	}
+
+	return NewDnstapOutput(params), nil
 }
 
 func (o *DnstapKafkaOutput) open() error {

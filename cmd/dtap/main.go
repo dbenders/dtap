@@ -197,8 +197,18 @@ func main() {
 			InCounter:   TotalRecvOutputFrame,
 			LostCounter: TotalLostInputFrame,
 		}
-		o, err := dtap.NewDnstapKafkaOutput(oc, params)
+		var o dtap.Output
+		if oc.Workers > 1 {
+			outs := make([]dtap.Output, oc.Workers)
+			for i := 0; i < oc.Workers; i++ {
+				outs[i], err = dtap.NewDnstapKafkaOutput(oc, params)
 		fatalCheck(err)
+			}
+			o = dtap.NewDnstapMultiWorkerOutput(outs)
+		} else {
+			o, err = dtap.NewDnstapKafkaOutput(oc, params)
+			fatalCheck(err)
+		}
 		output = append(output, o)
 	}
 

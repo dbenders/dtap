@@ -95,16 +95,12 @@ func (o *DnstapOutput) SetMessage(b []byte) {
 }
 
 type DnstapMultiWorkerOutput struct {
-	outputs []*DnstapOutput
+	outputs []Output
 	curr    int
 }
 
-func NewDnstapMultiWorkerOutput(params *DnstapOutputParams, workers int) *DnstapMultiWorkerOutput {
-	o := DnstapMultiWorkerOutput{outputs: make([]*DnstapOutput, workers)}
-	for i := 0; i < workers; i++ {
-		o.outputs[i] = NewDnstapOutput(params)
-	}
-	return &o
+func NewDnstapMultiWorkerOutput(outs []Output) *DnstapMultiWorkerOutput {
+	return &DnstapMultiWorkerOutput{outputs: outs}
 }
 
 func (o *DnstapMultiWorkerOutput) Run(ctx context.Context) {
