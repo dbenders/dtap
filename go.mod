@@ -1,4 +1,4 @@
-module github.com/mimuret/dtap
+module github.com/dbenders/dtap
 
 go 1.16
 
