@@ -19,6 +19,7 @@ package dtap
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
@@ -54,6 +55,8 @@ L:
 		default:
 			if err := o.handler.open(); err != nil {
 				log.Debug(err)
+				// wait before retrying
+				time.Sleep(1 * time.Second)
 				continue
 			}
 			log.Debug("success open")
@@ -104,6 +107,11 @@ func NewDnstapMultiWorkerOutput(outs []Output) *DnstapMultiWorkerOutput {
 }
 
 func (o *DnstapMultiWorkerOutput) Run(ctx context.Context) {
+	if len(o.outputs) == 1 {
+		o.outputs[0].Run(ctx)
+		return
+	}
+
 	var wg sync.WaitGroup
 	for _, out := range o.outputs {
 		wg.Add(1)

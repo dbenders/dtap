@@ -60,7 +60,6 @@ func (o *DnstapFstrmSocketOutput) open() error {
 
 func (o *DnstapFstrmSocketOutput) write(frame []byte) error {
 	if _, err := o.enc.Write(frame); err != nil {
-		o.close()
 		return err
 	}
 	return nil

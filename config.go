@@ -362,15 +362,19 @@ func (o *OutputFileConfig) GetUser() string {
 }
 
 type OutputTCPSocketConfig struct {
-	Host   string
-	Port   uint16
-	Buffer OutputBufferConfig
+	Host    string
+	Workers int
+	Port    uint16
+	Buffer  OutputBufferConfig
 }
 
 func (o *OutputTCPSocketConfig) Validate() *ValidationError {
 	err := NewValidationError()
 	if o.Host == "" {
 		err.Add(errors.New("Host must not be empty"))
+	}
+	if o.Workers == 0 {
+		o.Workers = 1
 	}
 	return err.Err()
 }

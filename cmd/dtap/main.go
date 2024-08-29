@@ -148,7 +148,11 @@ func main() {
 			InCounter:   TotalRecvOutputFrame,
 			LostCounter: TotalLostOutputFrame,
 		}
-		o := dtap.NewDnstapFstrmTCPSocketOutput(oc, params)
+		outs := make([]dtap.Output, oc.Workers)
+		for i := 0; i < oc.Workers; i++ {
+			outs[i] = dtap.NewDnstapFstrmTCPSocketOutput(oc, params)
+		}
+		o := dtap.NewDnstapMultiWorkerOutput(outs)
 		output = append(output, o)
 	}
 
@@ -184,18 +188,12 @@ func main() {
 			InCounter:   TotalRecvOutputFrame,
 			LostCounter: TotalLostOutputFrame,
 		}
-		var o dtap.Output
-		if oc.Workers > 1 {
-			outs := make([]dtap.Output, oc.Workers)
-			for i := 0; i < oc.Workers; i++ {
-				outs[i], err = dtap.NewDnstapKafkaOutput(oc, params)
-				fatalCheck(err)
-			}
-			o = dtap.NewDnstapMultiWorkerOutput(outs)
-		} else {
-			o, err = dtap.NewDnstapKafkaOutput(oc, params)
+		outs := make([]dtap.Output, oc.Workers)
+		for i := 0; i < oc.Workers; i++ {
+			outs[i], err = dtap.NewDnstapKafkaOutput(oc, params)
 			fatalCheck(err)
 		}
+		o := dtap.NewDnstapMultiWorkerOutput(outs)
 		output = append(output, o)
 	}
 
