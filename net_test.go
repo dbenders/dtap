@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/mimuret/dtap"
+	"github.com/dbenders/dtap"
 )
 
 func TestNet(t *testing.T) {

@@ -26,7 +26,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/mimuret/dtap"
+	"github.com/dbenders/dtap"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -229,6 +229,16 @@ func main() {
 			LostCounter: TotalLostOutputFrame,
 		}
 		o := dtap.NewDnstapStdoutOutput(oc, params)
+		output = append(output, o)
+	}
+
+	for _, oc := range config.OutputElasticSearch {
+		params := &dtap.DnstapOutputParams{
+			BufferSize:  oc.Buffer.GetBufferSize(),
+			InCounter:   TotalRecvOutputFrame,
+			LostCounter: TotalLostOutputFrame,
+		}
+		o := dtap.NewDnstapElasticSearchOutput(oc, params)
 		output = append(output, o)
 	}
 

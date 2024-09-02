@@ -5,7 +5,7 @@ dtap はDNSTAP用のメッセージルータです。
 
 ## Install
 ```
-go get -u github.com/mimuret/dtap/dtap
+go get -u github.com/dbenders/dtap/dtap
 ```
 
 ## 入力

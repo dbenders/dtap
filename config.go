@@ -39,21 +39,22 @@ import (
 )
 
 type Config struct {
-	InputMsgBuffer   uint
-	InputUnix        []*InputUnixSocketConfig
-	InputFile        []*InputFileConfig
-	InputTail        []*InputTailConfig
-	InputTCP         []*InputTCPSocketConfig
-	OutputUnix       []*OutputUnixSocketConfig
-	OutputFile       []*OutputFileConfig
-	OutputTCP        []*OutputTCPSocketConfig
-	OutputFluent     []*OutputFluentConfig
-	OutputKafka      []*OutputKafkaConfig
-	OutputNats       []*OutputNatsConfig
-	OutputPrometheus []*OutputPrometheus
-	OutputStdout     []*OutputStdoutConfig
-	MetricsGraphite  *MetricsGraphiteConfig
-	MetricsConsole   *MetricsConsoleConfig
+	InputMsgBuffer      uint
+	InputUnix           []*InputUnixSocketConfig
+	InputFile           []*InputFileConfig
+	InputTail           []*InputTailConfig
+	InputTCP            []*InputTCPSocketConfig
+	OutputUnix          []*OutputUnixSocketConfig
+	OutputFile          []*OutputFileConfig
+	OutputTCP           []*OutputTCPSocketConfig
+	OutputFluent        []*OutputFluentConfig
+	OutputKafka         []*OutputKafkaConfig
+	OutputNats          []*OutputNatsConfig
+	OutputPrometheus    []*OutputPrometheus
+	OutputStdout        []*OutputStdoutConfig
+	OutputElasticSearch []*OutputElasticSearchConfig
+	MetricsGraphite     *MetricsGraphiteConfig
+	MetricsConsole      *MetricsConsoleConfig
 }
 
 var (
@@ -169,6 +170,13 @@ func (c *Config) Validate() []error {
 	for n, o := range c.OutputPrometheus {
 		if err := o.Validate(); err != nil {
 			err.configType = "OutputPrometheus"
+			err.no = n
+			errs = append(errs, err)
+		}
+	}
+	for n, o := range c.OutputElasticSearch {
+		if err := o.Validate(); err != nil {
+			err.configType = "OutputElasticSearch"
 			err.no = n
 			errs = append(errs, err)
 		}
@@ -775,6 +783,38 @@ func (c *MetricsConsoleConfig) Validate() *ValidationError {
 	valerr := NewValidationError()
 	if c.Interval == 0 {
 		valerr.Add(errors.New("interval cannot be zero"))
+	}
+	return valerr.Err()
+}
+
+type OutputElasticSearchConfig struct {
+	Flat          FlatConfig
+	Buffer        OutputBufferConfig
+	Addresses     []string
+	Username      string
+	Password      string
+	Index         string
+	Workers       int           // The number of workers. Defaults to runtime.NumCPU().
+	FlushBytes    int           // The flush threshold in bytes. Defaults to 5MB.
+	FlushInterval time.Duration // The flush threshold as duration. Defaults to 30sec.
+}
+
+func (c *OutputElasticSearchConfig) Validate() *ValidationError {
+	valerr := NewValidationError()
+	if len(c.Addresses) == 0 {
+		valerr.Add(errors.New("Addresses must not be empty"))
+	}
+	if c.Index == "" {
+		valerr.Add(errors.New("IndexName must not be empty"))
+	}
+	if c.Workers == 0 {
+		c.Workers = 1
+	}
+	if c.FlushBytes == 0 {
+		c.FlushBytes = 5 * 1024 * 1024
+	}
+	if c.FlushInterval == 0 {
+		c.FlushInterval = 30 * time.Second
 	}
 	return valerr.Err()
 }

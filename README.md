@@ -4,11 +4,11 @@ Supported multi input and multi output.
 
 ## Install
 ```
-go get -u github.com/mimuret/dtap/dtap
+go get -u github.com/dbenders/dtap/dtap
 ```
 
 ## example
-see [example dir](https://github.com/mimuret/dtap/tree/master/example)
+see [example dir](https://github.com/dbenders/dtap/tree/master/example)
 
 ## Input config
 ### Unix Socket
@@ -114,6 +114,21 @@ User = "dnstap"
 Password = "hogehoge
 
 ```
+
+### Elastic Search
+Send packages to ElasticSearch
+
+```
+[OutputElasticSearch]
+Addresses = ["http://localhost:9200", "http://localhost:9200"]
+Workers = 10
+Index = "dnstap"
+Username = "admin"
+Password = "admin"
+FlushBytes = 1000000
+FlushInterval = "5s"
+```
+
 
 ## Metrics config
 ### Console

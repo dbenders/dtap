@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mimuret/dtap"
+	"github.com/dbenders/dtap"
 	"github.com/stretchr/testify/assert"
 )
 
