@@ -81,11 +81,11 @@ func (o *DnstapElasticSearchOutput) write(frame []byte) error {
 	if err := proto.Unmarshal(frame, &dt); err != nil {
 		return err
 	}
-	data, err := FlatDnstap(&dt, o.flatOption)
+	flatdt, err := FlatDnstap(&dt, o.flatOption)
 	if err != nil {
 		return err
 	}
-	buf, err := json.Marshal(data)
+	buf, err := o.marshal(flatdt)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
@@ -110,6 +110,21 @@ func (o *DnstapElasticSearchOutput) OnError(ctx context.Context, err error) {
 }
 
 func (o *DnstapElasticSearchOutput) marshal(flatdt *DnstapFlatT) ([]byte, error) {
+	ms := flatdt.ToMapString()
+
+	// convert fields
+	if ts, ok := ms["timestamp"]; ok {
+		ms["@timestamp"] = ts
+		delete(ms, "timestamp")
+	}
+
+	jsonData, err := json.Marshal(ms)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal data: %w", err)
+	}
+
+	return jsonData, nil
+}
 
 func (o *DnstapElasticSearchOutput) close() {
 	err := o.indexer.Close(ctx)
