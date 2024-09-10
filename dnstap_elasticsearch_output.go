@@ -60,6 +60,7 @@ func (o *DnstapElasticSearchOutput) open() error {
 		FlushBytes:    int(o.config.FlushBytes),
 		FlushInterval: o.config.FlushInterval,
 		DebugLogger:   logger{},
+		OnError:       o.OnError,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create bulk indexer: %w", err)
@@ -103,6 +104,12 @@ func (o *DnstapElasticSearchOutput) write(frame []byte) error {
 
 	return nil
 }
+
+func (o *DnstapElasticSearchOutput) OnError(ctx context.Context, err error) {
+	log.Errorf("failed to index item: %v", err)
+}
+
+func (o *DnstapElasticSearchOutput) marshal(flatdt *DnstapFlatT) ([]byte, error) {
 
 func (o *DnstapElasticSearchOutput) close() {
 	err := o.indexer.Close(ctx)
