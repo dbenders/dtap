@@ -788,15 +788,17 @@ func (c *MetricsConsoleConfig) Validate() *ValidationError {
 }
 
 type OutputElasticSearchConfig struct {
-	Flat          FlatConfig
-	Buffer        OutputBufferConfig
-	Addresses     []string
-	Username      string
-	Password      string
-	Index         string
-	Workers       int           // The number of workers. Defaults to runtime.NumCPU().
-	FlushBytes    int           // The flush threshold in bytes. Defaults to 5MB.
-	FlushInterval time.Duration // The flush threshold as duration. Defaults to 30sec.
+	Flat                   FlatConfig
+	Buffer                 OutputBufferConfig
+	Addresses              []string
+	Username               string
+	Password               string
+	CACert                 string
+	CertificateFingerprint string
+	Index                  string
+	Workers                int           // The number of workers. Defaults to runtime.NumCPU().
+	FlushBytes             int           // The flush threshold in bytes. Defaults to 5MB.
+	FlushInterval          time.Duration // The flush threshold as duration. Defaults to 30sec.
 }
 
 func (c *OutputElasticSearchConfig) Validate() *ValidationError {

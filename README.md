@@ -127,6 +127,8 @@ Username = "admin"
 Password = "admin"
 FlushBytes = 1000000
 FlushInterval = "5s"
+CACert = "./http_ca.crt"
+CertificateFingerprint="b7b1bdda9cbebecbd60c0ce59488796ed339a6404236440352c1e173a45d5619"
 ```
 
 

@@ -4,21 +4,26 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"os"
 
 	dnstap "github.com/dnstap/golang-dnstap"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esutil"
 	"github.com/golang/protobuf/proto"
+	"github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )
 
 type DnstapElasticSearchOutput struct {
-	config     *OutputElasticSearchConfig
-	flatOption DnstapFlatOption
-	esConfig   *elasticsearch.Config
-	client     *elasticsearch.Client
-	indexer    esutil.BulkIndexer
+	config      *OutputElasticSearchConfig
+	flatOption  DnstapFlatOption
+	esConfig    *elasticsearch.Config
+	client      *elasticsearch.Client
+	indexer     esutil.BulkIndexer
+	lostCounter metrics.Counter
 }
 
 type logger struct{}
@@ -29,18 +34,35 @@ func (l logger) Printf(format string, v ...interface{}) {
 }
 
 func NewDnstapElasticSearchOutput(config *OutputElasticSearchConfig, params *DnstapOutputParams) *DnstapOutput {
+	var caCert []byte
+	f, err := os.Open(config.CACert)
+	if err == nil {
+		defer f.Close()
+		caCert, err = io.ReadAll(f)
+		if err != nil {
+			log.Fatalf("failed to read CA cert file: %v", err)
+		}
+	} else {
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Fatalf("failed to open CA cert file: %v", err)
+		}
+	}
+
 	esConfig := elasticsearch.Config{
-		Addresses: config.Addresses,
-		Username:  config.Username,
-		Password:  config.Password,
+		Addresses:              config.Addresses,
+		Username:               config.Username,
+		Password:               config.Password,
+		CACert:                 caCert,
+		CertificateFingerprint: config.CertificateFingerprint,
 	}
 
 	// TODO: retry
 
 	params.Handler = &DnstapElasticSearchOutput{
-		config:     config,
-		flatOption: &config.Flat,
-		esConfig:   &esConfig,
+		config:      config,
+		flatOption:  &config.Flat,
+		esConfig:    &esConfig,
+		lostCounter: params.LostCounter,
 	}
 
 	return NewDnstapOutput(params)
@@ -61,6 +83,7 @@ func (o *DnstapElasticSearchOutput) open() error {
 		FlushInterval: o.config.FlushInterval,
 		DebugLogger:   logger{},
 		OnError:       o.OnError,
+		OnFlushEnd:    o.OnFlushEnd,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create bulk indexer: %w", err)
@@ -91,11 +114,9 @@ func (o *DnstapElasticSearchOutput) write(frame []byte) error {
 	}
 
 	item := esutil.BulkIndexerItem{
-		Index:     o.config.Index,
-		Action:    "index",
-		Body:      bytes.NewReader(buf),
-		OnSuccess: nil,
-		OnFailure: nil,
+		Index:  o.config.Index,
+		Action: "index",
+		Body:   bytes.NewReader(buf),
 	}
 	err = o.indexer.Add(ctx, item)
 	if err != nil {
@@ -106,7 +127,16 @@ func (o *DnstapElasticSearchOutput) write(frame []byte) error {
 }
 
 func (o *DnstapElasticSearchOutput) OnError(ctx context.Context, err error) {
-	log.Errorf("failed to index item: %v", err)
+	log.Error(err)
+}
+
+func (o *DnstapElasticSearchOutput) OnFlushEnd(ctx context.Context) {
+	prevLost := uint64(o.lostCounter.Count())
+	newLost := o.indexer.Stats().NumFailed
+	fmt.Printf("lost: %d. total: %d\n", newLost-prevLost, newLost)
+	if newLost > prevLost {
+		o.lostCounter.Inc(int64(newLost - prevLost))
+	}
 }
 
 func (o *DnstapElasticSearchOutput) marshal(flatdt *DnstapFlatT) ([]byte, error) {
