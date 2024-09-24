@@ -100,6 +100,7 @@ var (
 )
 
 func (c *Config) Validate() []error {
+	log.Debug("Validate")
 	errs := []error{}
 	if c.InputMsgBuffer < 128 {
 		errs = append(errs, errors.New("InputMsgBuffer must not small 128"))
@@ -135,6 +136,13 @@ func (c *Config) Validate() []error {
 	for n, o := range c.OutputFile {
 		if err := o.Validate(); err != nil {
 			err.configType = "OutputFile"
+			err.no = n
+			errs = append(errs, err)
+		}
+	}
+	for n, o := range c.OutputStdout {
+		if err := o.Validate(); err != nil {
+			err.configType = "OutputStdout"
 			err.no = n
 			errs = append(errs, err)
 		}
@@ -608,7 +616,7 @@ func (o *OutputStdoutConfig) GetType() string {
 	}
 	return o.Type
 }
-func (o *OutputStdoutConfig) Validate() error {
+func (o *OutputStdoutConfig) Validate() *ValidationError {
 	valerr := NewValidationError()
 	o.Type = strings.ToLower(o.Type)
 	switch o.Type {
@@ -731,6 +739,7 @@ func (o *FlatConfig) Validate() *ValidationError {
 	}
 	o.ipv4Mask = net.CIDRMask(int(o.IPv4Mask), 32)
 
+	log.Debugf("ipv4MASK %v", o.ipv4Mask)
 	if o.IPv6Mask != 0 {
 		if o.IPv6Mask > 128 {
 			valerr.Add(errors.New("IPv4Mask must include range 0 to 128"))
@@ -739,7 +748,7 @@ func (o *FlatConfig) Validate() *ValidationError {
 		o.IPv6Mask = 48
 	}
 	o.ipv6Mask = net.CIDRMask(int(o.IPv6Mask), 128)
-
+	log.Debugf("ipv6MASK %v", o.ipv6Mask)
 	if o.ipHashSalt == nil {
 		if o.IPHashSaltPath != "" {
 			o.LoadSalt()

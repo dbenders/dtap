@@ -38,6 +38,7 @@ type DnstapFlatT struct {
 	ResponseAddressHash   string `json:"response_address_hash,omitempty" msg:"response_address_hash"`
 	ResponsePort          uint32 `json:"response_port,omitempty" msg:"response_port"`
 	ResponseZone          string `json:"response_zone,omitempty" msg:"response_zone"`
+	ResponseMessage       string `json:"response_message,omitempty" msg:"response_message"`
 	EcsNet                *Net   `json:"ecs_net,omitempty" msg:"ecs_net"`
 	Identity              string `json:"identity,omitempty" msg:"identity"`
 	Type                  string `json:"type" msg:"type"`
@@ -124,6 +125,7 @@ func FlatDnstap(dt *dnstap.Dnstap, opt DnstapFlatOption) (*DnstapFlatT, error) {
 	data.SocketProtocol = msg.GetSocketProtocol().String()
 	data.Version = string(dt.GetVersion())
 	data.Extra = string(dt.GetExtra())
+
 	dnsMsg := dns.Msg{}
 	if err := dnsMsg.Unpack(dnsMessage); err != nil {
 		return nil, fmt.Errorf("failed to parse dns message() err: %w", err)
@@ -142,6 +144,10 @@ func FlatDnstap(dt *dnstap.Dnstap, opt DnstapFlatOption) (*DnstapFlatT, error) {
 
 		data.MessageSize = len(dnsMessage)
 		data.Txid = dnsMsg.MsgHdr.Id
+	}
+
+	if len(dnsMsg.Answer) > 0 {
+		data.ResponseMessage = dnsMsg.Answer[0].String()
 	}
 	if opt.GetEnableEcs() {
 		if len(dnsMsg.Extra) > 0 {
@@ -246,6 +252,7 @@ func (d *DnstapFlatT) ToMapString() map[string]interface{} {
 	res["ra"] = d.RA
 	res["ad"] = d.AD
 	res["cd"] = d.CD
+	res["response_message"] = d.ResponseMessage
 
 	return res
 }
