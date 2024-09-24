@@ -3,11 +3,12 @@ package dtap
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/goccy/go-json"
 
 	dnstap "github.com/dnstap/golang-dnstap"
 	"github.com/elastic/go-elasticsearch/v8"
@@ -132,8 +133,8 @@ func (o *DnstapElasticSearchOutput) OnError(ctx context.Context, err error) {
 
 func (o *DnstapElasticSearchOutput) OnFlushEnd(ctx context.Context) {
 	prevLost := uint64(o.lostCounter.Count())
-	newLost := o.indexer.Stats().NumFailed
-	fmt.Printf("lost: %d. total: %d\n", newLost-prevLost, newLost)
+	stats := o.indexer.Stats()
+	newLost := stats.NumFailed
 	if newLost > prevLost {
 		o.lostCounter.Inc(int64(newLost - prevLost))
 	}

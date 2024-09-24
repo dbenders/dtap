@@ -19,9 +19,10 @@ package dtap
 import (
 	_ "embed"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	dnstap "github.com/dnstap/golang-dnstap"
 	"github.com/golang/protobuf/proto"
