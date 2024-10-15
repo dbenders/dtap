@@ -28,7 +28,7 @@ import (
 )
 
 type DnstapFlatT struct {
-	Timestamp             string `json:"timestamp" msg:"timestamp"`
+	Timestamp             string `json:"@timestamp" msg:"timestamp"`
 	QueryTime             string `json:"query_time,omitempty" msg:"query_time"`
 	QueryAddress          net.IP `json:"query_address,omitempty" msg:"query_address"`
 	QueryAddressHash      string `json:"query_address_hash,omitempty" msg:"query_address_hash"`
@@ -207,7 +207,7 @@ func getName(labels []string, i int) string {
 
 func (d *DnstapFlatT) ToMapString() map[string]interface{} {
 	res := map[string]interface{}{}
-	res["timestamp"] = d.Timestamp
+	res["@timestamp"] = d.Timestamp
 	res["query_time"] = d.QueryTime
 	if d.QueryAddress != nil {
 		res["query_address"] = d.QueryAddress.String()

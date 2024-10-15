@@ -114,9 +114,14 @@ func (o *DnstapElasticSearchOutput) write(frame []byte) error {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
+	action := "index"
+	if o.config.IndexType == "datastream" {
+		action = "create"
+	}
+
 	item := esutil.BulkIndexerItem{
 		Index:  o.config.Index,
-		Action: "index",
+		Action: action,
 		Body:   bytes.NewReader(buf),
 	}
 	err = o.indexer.Add(ctx, item)
@@ -142,13 +147,6 @@ func (o *DnstapElasticSearchOutput) OnFlushEnd(ctx context.Context) {
 
 func (o *DnstapElasticSearchOutput) marshal(flatdt *DnstapFlatT) ([]byte, error) {
 	ms := flatdt.ToMapString()
-
-	// convert fields
-	if ts, ok := ms["timestamp"]; ok {
-		ms["@timestamp"] = ts
-		delete(ms, "timestamp")
-	}
-
 	jsonData, err := json.Marshal(ms)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal data: %w", err)

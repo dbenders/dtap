@@ -805,6 +805,7 @@ type OutputElasticSearchConfig struct {
 	CACert                 string
 	CertificateFingerprint string
 	Index                  string
+	IndexType              string        // index or datastream
 	Workers                int           // The number of workers. Defaults to runtime.NumCPU().
 	FlushBytes             int           // The flush threshold in bytes. Defaults to 5MB.
 	FlushInterval          time.Duration // The flush threshold as duration. Defaults to 30sec.
@@ -826,6 +827,12 @@ func (c *OutputElasticSearchConfig) Validate() *ValidationError {
 	}
 	if c.FlushInterval == 0 {
 		c.FlushInterval = 30 * time.Second
+	}
+	if c.IndexType == "" {
+		c.IndexType = "datastream"
+	}
+	if err := c.Flat.Validate(); err != nil {
+		valerr.Add(err)
 	}
 	return valerr.Err()
 }
